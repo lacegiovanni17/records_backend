@@ -1,0 +1,506 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserType {
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AdminRole {
+  APPROVER
+  EDITOR
+  VIEWER
+  OVERSEER
+}
+
+// ─── Company Enums ───────────────────────────────────────────────
+
+enum VerificationSource {
+  PREMBLY   // verified via Prembly API
+  ADMIN     // verified manually by a Noemdek admin
+}
+
+enum VerificationStatus {
+  VERIFIED
+  PARTIAL
+  UNVERIFIED
+}
+
+enum RedlistStatus {
+  FLAGGED
+  CLEAN
+}
+
+enum Industry {
+  ENERGY
+  FINANCE
+  MANUFACTURING
+  TECH
+  TRADING
+  // extend via migration as needed
+}
+
+enum PersonRole {
+  DIRECTOR
+  SHAREHOLDER
+  CFO
+  CEO
+  FOUNDER
+  CO_FOUNDER
+  BOARD_MEMBER
+  // extend via migration
+}
+
+// ─── Document Enums ──────────────────────────────────────────────
+
+enum DocumentType {
+  CORPORATE
+  COMPLIANCE
+  FINANCIALS
+  LEGAL
+}
+
+enum DocumentName {
+  // Corporate
+  CERTIFICATE_OF_INCORPORATION
+  BUSINESS_REGISTRATION
+  // Compliance
+  TAX_CERTIFICATE
+  REGULATORY_FILINGS
+  // Financials
+  FINANCIAL_STATEMENT
+  AUDIT_REPORTS
+  // Legal
+  COURT_FILINGS
+  AGREEMENT
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  // MISSING + EXPIRED are derived at read time, never stored
+}
+
+enum RejectionReasonCode {
+  ILLEGIBLE
+  EXPIRED
+  MISMATCH
+  INCOMPLETE
+  OTHER
+}
+
+enum DocumentRequestStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
+// ─── Redlist Enums ───────────────────────────────────────────────
+
+enum CaseSeverity {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CaseStatus {
+  UNDER_INVESTIGATION
+  ALLEGED
+  CHARGED
+  CONVICTED
+  RESOLVED
+}
+
+enum CaseRole {
+  PRIMARY_SUBJECT
+  LINKED_COMPANY
+  LINKED_INDIVIDUAL
+}
+
+enum CaseCategory {
+  LEGAL_CRIMINAL
+  REGULATORY_COMPLIANCE
+  FINANCIAL_RISK
+  AML_FINANCIAL_CRIME
+  CORPORATE_GOVERNANCE
+  SANCTIONS_WATCHLISTS
+  DATA_PRIVACY_CYBERSECURITY
+  LABOR_HUMAN_RIGHTS
+  RELATIONSHIP_RISK
+  ENVIRONMENTAL
+  DOCUMENTATION_VERIFICATION
+  LITIGATION_DISPUTES
+  REPUTATION_RISK
+  OPERATIONAL_RISK
+  POLITICAL_EXPOSURE
+}
+
+enum EvidenceKind {
+  DOCUMENT   // uploaded file
+  LINK       // external URL
+}
+
+enum EvidenceConfidence {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EvidenceSourceType {
+  GOVERNMENT
+  NEWS
+  COURT
+  REGULATORY
+  INTERNAL
+  OTHER
+}
+
+enum CompanyRelationType {
+  SUBSIDIARY      // parent owns child
+  INVESTMENT      // investor stake, non-controlling
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Admin {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  userType  UserType   @default(ADMIN)
+  role      AdminRole?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  otpCodes  OtpCode[]
+}
+
+model OtpCode {
+  id        String    @id @default(uuid())
+  email     String
+  code      String
+  attempts  Int       @default(0) 
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  admin     Admin     @relation(fields: [email], references: [email])
+
+  @@index([email])
+  @@index([email, code, expiresAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?  // nullable — some events have no authenticated user (e.g. failed login)
+  actorEmail String?  // denormalized snapshot — survives even if admin is later deleted
+  action     String   // e.g. "auth.login.success", "record.approved"
+  targetType String?  // e.g. "Admin", "Record"
+  targetId   String?  // the id of the affected entity
+  metadata   Json?    // flexible context: { ip, before, after, ... }
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// ─── Company Model ───────────────────────────────────────────────
+
+model Company {
+  id                  String             @id @default(uuid())
+
+  // Required at creation
+  name                String
+  registrationNumber  String             @unique
+  countryCode         String             // ISO alpha-2, e.g. "NG"
+  countryName         String             // snapshot, e.g. "Nigeria"
+  industry            Industry
+  companyType         String
+  incorporationDate   DateTime           @db.Date
+  email               String
+
+  // Optional
+  registeredAddress   String?
+  phone               String?
+  website             String?
+  foundedDate         DateTime?          @db.Date
+  marketCap           Decimal?           @db.Decimal(20, 2)
+  logoUrl             String?
+  about               String?
+  regulatoryAuthority String?
+
+  verificationStatus  VerificationStatus @default(UNVERIFIED)
+  verificationSource  VerificationSource?  // null until verified
+  verifiedByAdminId   String?              // set ONLY when source = ADMIN
+  verifiedAt          DateTime?
+  premblyReference    String?              // set ONLY when source = PREMBLY
+  riskScore           Int                @default(0)
+  redlistStatus       RedlistStatus      @default(CLEAN)
+  people              CompanyIndividual[]
+  documents           Document[]
+  documentRequests    DocumentRequest[]
+  redlistLinks        CaseEntity[]
+  parentRelationships CompanyRelationship[] @relation("ParentRelationships") // where this company is the parent
+  childRelationships  CompanyRelationship[] @relation("ChildRelationships")  // where this company is the child
+
+  archivedAt          DateTime?          // null = not archived
+  archivedBy          String?            // admin id who archived
+
+  deletedAt           DateTime?          // null = live record
+  deletedBy           String?            // admin id who deleted
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  //@@index([deletedAt, archivedAt, industry, riskScore]) // to be used at 10k plus companies
+}
+
+model Individual {
+  id                  String             @id @default(uuid())
+
+  // ── Identity (required at creation) ──
+  firstName           String
+  lastName            String
+  nationality         String
+  dateOfBirth         DateTime           @db.Date
+
+  // ── Identity (optional) ──
+  middleName          String?
+  photoUrl            String?
+  about               String?
+
+  // ── Person-level risk & status (server-set) ──
+  riskScore           Int                @default(0)   // 0–100, the "82" follows the person
+  redlistStatus       RedlistStatus      @default(CLEAN)
+
+  // ── Verification (same Admin/Prembly provenance as Company) ──
+  verificationStatus  VerificationStatus @default(UNVERIFIED)
+  verificationSource  VerificationSource?
+  verifiedByAdminId   String?
+  verifiedAt          DateTime?
+  premblyReference    String?
+  companyLinks        CompanyIndividual[]
+  redlistLinks        CaseEntity[]
+
+  // ── Archive (reversible set-aside) ──
+  archivedAt          DateTime?
+  archivedBy          String?
+
+  // ── Soft delete (recoverable) ──
+  deletedAt           DateTime?
+  deletedBy           String?
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model CompanyIndividual {
+  id                  String       @id @default(uuid())
+
+  companyId           String
+  individualId        String
+
+  // ── Link attributes ──
+  roles               PersonRole[] // array — "Director, CFO" at the SAME company
+  isKeyPerson         Boolean      @default(false)
+  ownershipPercentage Decimal?     @db.Decimal(5, 2) // e.g. 68.00; only for shareholders
+  source              String?      // "SEC Filing, Company report" — where this link is evidenced
+  appointedAt         DateTime?    @db.Date // "First Appointed: Feb 1, 2015"
+
+  company             Company      @relation(fields: [companyId], references: [id])
+  individual          Individual   @relation(fields: [individualId], references: [id])
+
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@unique([companyId, individualId]) // one link row per person-company pair
+}
+
+// ─── Document Model ──────────────────────────────────────────────
+
+model Document {
+  id                 String              @id @default(uuid())
+  companyId          String
+
+  documentType       DocumentType
+  documentName       DocumentName
+
+  fileKey            String              // private storage key — presigned on read
+  fileName           String?             // original upload filename, for display
+  source             String?             // issuing authority: "Government CAC", "LIRS"
+
+  status             DocumentStatus      @default(PENDING)
+  expiresAt          DateTime?           // drives derived EXPIRED
+
+  // ── Verification provenance ──
+  verificationSource VerificationSource? // ADMIN now; PREMBLY later
+  verifiedByAdminId  String?
+  verifiedAt         DateTime?
+  rejectionReason    String?
+  rejectionReasonCode RejectionReasonCode?
+
+  // ── Upload provenance ──
+  uploadedByAdminId  String              // createdAt below = uploaded date
+
+  company            Company             @relation(fields: [companyId], references: [id])
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  deletedBy          String?
+
+  @@index([companyId])
+}
+
+model DocumentRequest {
+  id               String                @id @default(uuid())
+  companyId        String
+  documentType     DocumentType
+  documentName     DocumentName          // the missing doc being requested
+  assignedToAdminId String               // who must supply it
+  requestedByAdminId String              // who asked
+  message          String?
+  status           DocumentRequestStatus @default(PENDING)
+
+  company          Company               @relation(fields: [companyId], references: [id])
+
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([companyId])
+  @@index([assignedToAdminId])
+}
+
+// ─── Redlist Models ──────────────────────────────────────────────
+
+model RedlistCase {
+  id                String              @id @default(uuid())
+
+  title             String
+  caseReference     String?             // external ref e.g. "IRS-2022-4568"
+  category          CaseCategory
+  severity          CaseSeverity
+  status            CaseStatus          @default(UNDER_INVESTIGATION)
+
+  summary           String?
+  jurisdiction      String?
+  legalBasis        String?
+  authority         String?             // "Inland Revenue Service (IRS)"
+  sourceName        String?             // "Government Record", "News"
+  sourceUrl         String?
+
+  // ── Case dates (legal lifecycle) ──
+  incidentDate      DateTime?           @db.Date
+  filedDate         DateTime?           @db.Date
+  resolutionDate    DateTime?           @db.Date
+
+  // ── Assignment (investigating admin — raw string, denormalized pattern) ──
+  assignedToAdminId String?
+  createdByAdminId  String
+
+  entities          CaseEntity[]
+  statusHistory     CaseStatusHistory[]
+  evidence          CaseEvidence[] 
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deletedAt         DateTime?
+  deletedBy         String?
+
+  @@index([category])
+  @@index([severity])
+  @@index([status])
+}
+
+model CaseEntity {
+  id             String       @id @default(uuid())
+  caseId         String
+
+  // Polymorphic: exactly ONE of companyId / individualId set (DB check enforces)
+  companyId      String?
+  individualId   String?
+
+  roleInCase     CaseRole
+  addedByAdminId String
+
+  case           RedlistCase  @relation(fields: [caseId], references: [id])
+  company        Company?     @relation(fields: [companyId], references: [id])
+  individual     Individual?  @relation(fields: [individualId], references: [id])
+
+  createdAt      DateTime     @default(now())
+
+  @@index([caseId])
+  @@index([companyId])
+  @@index([individualId])
+}
+
+model CaseStatusHistory {
+  id            String       @id @default(uuid())
+  caseId        String
+  status        CaseStatus
+  changedByAdminId String
+  note          String?
+  createdAt     DateTime     @default(now())
+
+  case          RedlistCase  @relation(fields: [caseId], references: [id])
+
+  @@index([caseId])
+}
+
+model CaseEvidence {
+  id                   String              @id @default(uuid())
+  caseId               String
+
+  name                 String              // free text: "Wire Transfer Records"
+  kind                 EvidenceKind
+  sourceClassification EvidenceSourceType?         // "Government", "News", "Court" — see Q1
+  confidence           EvidenceConfidence
+
+  // XOR: exactly one set, enforced by DB check (like CaseEntity)
+  fileKey              String?             // when kind = DOCUMENT (private, presigned)
+  fileName             String?
+  url                  String?             // when kind = LINK
+
+  addedByAdminId       String
+
+  case                 RedlistCase         @relation(fields: [caseId], references: [id])
+
+  createdAt            DateTime            @default(now())
+
+  @@index([caseId])
+}
+
+model CompanyRelationship {
+  id                  String              @id @default(uuid())
+
+  parentCompanyId     String              // the owner / investor / parent
+  childCompanyId      String              // the owned / invested / subsidiary
+
+  type                CompanyRelationType
+  ownershipPercentage Decimal?            @db.Decimal(5, 2) // e.g. 60.00
+  source              String?             // "SEC Filing", where the relationship is evidenced
+  addedByAdminId      String
+
+  // Named relations — required because BOTH FKs point to Company
+  parentCompany       Company             @relation("ParentRelationships", fields: [parentCompanyId], references: [id])
+  childCompany        Company             @relation("ChildRelationships",  fields: [childCompanyId],  references: [id])
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@unique([parentCompanyId, childCompanyId, type]) // no duplicate edge of same type
+  @@index([parentCompanyId])
+  @@index([childCompanyId])
+}

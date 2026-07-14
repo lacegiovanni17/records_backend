@@ -1,0 +1,8 @@
+export enum IndividualSort {
+  NEWEST = 'NEWEST',
+  OLDEST = 'OLDEST',
+  ALPHABETICAL = 'ALPHABETICAL',
+  RISK_HIGH = 'RISK_HIGH',
+  RISK_LOW = 'RISK_LOW',
+  LAST_UPDATED = 'LAST_UPDATED',
+}
