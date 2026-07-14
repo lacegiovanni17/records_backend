@@ -94,11 +94,19 @@ enum DocumentStatus {
 }
 
 enum RejectionReasonCode {
-  ILLEGIBLE
-  EXPIRED
-  MISMATCH
-  INCOMPLETE
-  OTHER
+  INVALID_DOCUMENT
+  UNREADABLE_DOCUMENT
+  INCOMPLETE_DOCUMENT
+  MISSING_REQUIRED_PAGES
+  DOCUMENT_EXPIRED
+  NAME_MISMATCH               // "name do not match"
+  REGISTRATION_NUMBER_MISMATCH
+  DETAILS_MISMATCH            // "details do not match records"
+  UNRECOGNIZED_AUTHORITY      // "not from recognized authority"
+  UNABLE_TO_VERIFY_SOURCE
+  SUSPECTED_FRAUDULENT
+  INCORRECT_DOCUMENT          // "incorrect document uploaded"
+  MISSING_SUPPORTING_DOCUMENT
 }
 
 enum DocumentRequestStatus {
