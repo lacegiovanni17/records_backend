@@ -9,9 +9,15 @@ import { CompanyIndividualRepository } from './repositories/company-individual.r
 import { StorageModule } from '../../infrastructure/storage/storage.module';
 import { CompanyStructureService } from './company-structure.service';
 import { CompanyRelationshipRepository } from './repositories/company-relationship.repository';
+import { IndustriesModule } from '../industries/industries.module';
 
 @Module({
-  imports: [CountriesModule, IndividualsModule, StorageModule],
+  imports: [
+    CountriesModule,
+    IndividualsModule,
+    StorageModule,
+    IndustriesModule,
+  ],
   controllers: [CompaniesController],
   providers: [
     CompaniesService,

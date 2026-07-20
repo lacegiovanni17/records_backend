@@ -1,11 +1,11 @@
 import {
   PrismaClient,
-  Industry,
   VerificationStatus,
   RedlistStatus,
 } from '@prisma/client';
+import industries from '../../../src/modules/industries/data/industries.json';
 
-const INDUSTRIES = Object.values(Industry);
+const INDUSTRIES = industries;
 const VERIFICATION = Object.values(VerificationStatus);
 const REDLIST = Object.values(RedlistStatus);
 const COUNTRIES = ['NG', 'GH', 'DE', 'IL', 'US', 'GB', 'ZA', 'KE', 'FR', 'AE'];

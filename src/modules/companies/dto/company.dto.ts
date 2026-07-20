@@ -18,7 +18,6 @@ import {
   IsUUID,
 } from 'class-validator';
 import {
-  Industry,
   VerificationStatus,
   RedlistStatus,
 } from '../../../shared/interfaces/company.interface';
@@ -42,7 +41,7 @@ export class CreateCompanyDto {
   )
   readonly registrationNumber!: string;
   @IsString() @MaxLength(2) readonly countryCode!: string;
-  @IsEnum(Industry) readonly industry!: Industry;
+  @IsString() readonly industry!: string;
   @IsString() @MaxLength(100) readonly companyType!: string;
   @IsDateString() readonly incorporationDate!: string;
   @IsEmail() readonly email!: string;
@@ -71,7 +70,7 @@ export class QueryCompaniesDto {
   @IsEnum(VerificationStatus)
   readonly verificationStatus?: VerificationStatus;
   @IsOptional() @IsEnum(RedlistStatus) readonly redlistStatus?: RedlistStatus;
-  @IsOptional() @IsEnum(Industry) readonly industry?: Industry;
+  @IsOptional() @IsString() readonly industry?: string;
   @IsOptional() @IsString() readonly country?: string;
   @IsOptional() @IsEnum(CompanySort) readonly sort?: CompanySort;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) readonly page?: number;

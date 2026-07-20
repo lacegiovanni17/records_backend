@@ -14,6 +14,7 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { IndividualsModule } from './modules/individuals/individual.module';
 import { DocumentsModule } from './modules/documents/document.module';
 import { RedlistModule } from './modules/redlist/redlist.module';
+import { IndustriesModule } from './modules/industries/industries.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RedlistModule } from './modules/redlist/redlist.module';
     IndividualsModule,
     DocumentsModule,
     RedlistModule,
+    IndustriesModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',
