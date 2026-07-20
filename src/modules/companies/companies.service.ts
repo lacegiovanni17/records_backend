@@ -21,6 +21,7 @@ import { CompanySort } from './enums/company-query.enum';
 import { RiskLevel } from '../../shared/enums/risk-level.enum';
 import { StorageService } from '../../infrastructure/storage/storage.service';
 import type {} from 'multer';
+import { IndustriesService } from '../industries/industries.service';
 
 @Injectable()
 export class CompaniesService {
@@ -31,16 +32,21 @@ export class CompaniesService {
     private readonly countriesService: CountriesService,
     private readonly auditService: AuditService,
     private readonly storageService: StorageService,
+    private readonly industriesService: IndustriesService,
   ) {}
 
-  async create(
+  // Creates a company: validates country + industry, uploads optional logo, persists, and audits
+  async createCompany(
     dto: CreateCompanyDto,
     actor: AuthenticatedUser,
     file?: Express.Multer.File,
   ): Promise<Company> {
     // 1. Validate country + resolve name from the single source of truth.
     const country = this.countriesService.findByCode(dto.countryCode);
-
+    if (!this.industriesService.isValid(dto.industry)) {
+      throw new BadRequestException('Invalid industry.');
+    }
+    const industry = this.industriesService.resolve(dto.industry);
     // 2. Reject duplicate registration numbers with a clean 409
     const existing = await this.companyRepository.findByRegistrationNumber(
       dto.registrationNumber,
@@ -50,21 +56,19 @@ export class CompaniesService {
         'A company with this registration number already exists.',
       );
     }
-
     // 3. If a logo file was sent, upload it (PUBLIC tier) and capture the URL
     let logoUrl: string | undefined;
     if (file) {
       const result = await this.storageService.upload(file, { isPublic: true });
       logoUrl = result.url ?? undefined;
     }
-
     // 4. Create — server sets countryName + logoUrl; defaults handle status/risk/redlist
     const company = await this.companyRepository.create({
       name: dto.name,
       registrationNumber: dto.registrationNumber,
       countryCode: country.code,
       countryName: country.name,
-      industry: dto.industry,
+      industry: industry,
       companyType: dto.companyType,
       incorporationDate: new Date(dto.incorporationDate),
       email: dto.email,
@@ -77,7 +81,6 @@ export class CompaniesService {
       about: dto.about,
       regulatoryAuthority: dto.regulatoryAuthority,
     });
-
     // 5. Audit the creation
     await this.auditService.log({
       actorId: actor.id,
@@ -90,20 +93,25 @@ export class CompaniesService {
         registrationNumber: company.registrationNumber,
       },
     });
-
     this.logger.log(`Company created → ${company.name} by ${actor.email}`);
     return company;
   }
 
-  async update(
+  // Updates a company: validates industry/country if changed, applies a before/after diff, and audits
+  async updateCompany(
     id: string,
     dto: UpdateCompanyDto,
     actor: AuthenticatedUser,
   ): Promise<Company> {
     const before = await this.findOne(id); // existence + not-deleted guard
-
+    // Validate industry if it's being changed
+    if (dto.industry && !this.industriesService.isValid(dto.industry)) {
+      throw new BadRequestException('Invalid industry.');
+    }
     // Resolve country if it's being changed (keep code+name in sync)
     const data: Prisma.CompanyUpdateInput = { ...dto };
+    if (dto.industry)
+      data.industry = this.industriesService.resolve(dto.industry);
     if (dto.countryCode) {
       const country = this.countriesService.findByCode(dto.countryCode);
       data.countryCode = country.code;
@@ -112,15 +120,12 @@ export class CompaniesService {
     if (dto.incorporationDate)
       data.incorporationDate = new Date(dto.incorporationDate);
     if (dto.foundedDate) data.foundedDate = new Date(dto.foundedDate);
-
     const after = await this.companyRepository.update(id, data);
-
     const changes = this.buildDiff(
       before,
       after,
       Object.keys(dto) as (keyof Company)[],
     );
-
     await this.auditService.log({
       actorId: actor.id,
       actorEmail: actor.email,
@@ -129,7 +134,6 @@ export class CompaniesService {
       targetId: id,
       metadata: { changes }, // full before/after diff
     });
-
     this.logger.log(`Company updated → ${id} by ${actor.email}`);
     return after;
   }

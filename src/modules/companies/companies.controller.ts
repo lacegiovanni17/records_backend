@@ -65,7 +65,7 @@ export class CompaniesController {
     )
     file?: Express.Multer.File,
   ) {
-    const data = await this.companiesService.create(dto, user, file);
+    const data = await this.companiesService.createCompany(dto, user, file);
     return AppResponse.success('Company created', HttpStatus.CREATED, data);
   }
 
@@ -106,7 +106,7 @@ export class CompaniesController {
     @Body() dto: UpdateCompanyDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    const data = await this.companiesService.update(id, dto, user);
+    const data = await this.companiesService.updateCompany(id, dto, user);
     return AppResponse.success('Company updated', HttpStatus.OK, data);
   }
 

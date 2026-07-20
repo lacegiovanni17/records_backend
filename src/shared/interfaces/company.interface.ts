@@ -1,5 +1,4 @@
 export {
-  Industry,
   VerificationStatus,
   RedlistStatus,
   VerificationSource,

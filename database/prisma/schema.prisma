@@ -42,15 +42,6 @@ enum RedlistStatus {
   CLEAN
 }
 
-enum Industry {
-  ENERGY
-  FINANCE
-  MANUFACTURING
-  TECH
-  TRADING
-  // extend via migration as needed
-}
-
 enum PersonRole {
   DIRECTOR
   SHAREHOLDER
@@ -235,7 +226,7 @@ model Company {
   registrationNumber  String             @unique
   countryCode         String             // ISO alpha-2, e.g. "NG"
   countryName         String             // snapshot, e.g. "Nigeria"
-  industry            Industry
+  industry            String
   companyType         String
   incorporationDate   DateTime           @db.Date
   email               String
