@@ -33,10 +33,12 @@ export class AuthService {
     private readonly auditService: AuditService,
   ) {}
 
+  // Generate a cryptographically random 6-digit code
   private generateOtp(): string {
     return randomInt(100000, 1000000).toString();
   }
 
+  // Issue a fresh OTP to a registered, active admin (silent no-op for unknown emails)
   async requestOtp(dto: RequestOtpDto): Promise<{ message: string }> {
     const admin = await this.adminRepository.findByEmail(dto.email);
     if (!admin || !admin.isActive) {
@@ -70,6 +72,7 @@ export class AuthService {
     return { message: GENERIC_OTP_MESSAGE };
   }
 
+  // Verify a submitted OTP, enforce attempt capping, and mint a JWT on success
   async verifyOtp(dto: VerifyOtpDto): Promise<{
     accessToken: string;
     admin: {

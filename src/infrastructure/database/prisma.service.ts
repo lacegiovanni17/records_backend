@@ -18,11 +18,13 @@ export class PrismaService
       log: ['error', 'warn'],
     });
   }
+  // Open the database connection when the module boots
   async onModuleInit() {
     await this.$connect();
     this.logger.log('Database connected');
   }
 
+  // Close the database connection on graceful shutdown
   async onModuleDestroy() {
     await this.$disconnect();
     this.logger.log('Database disconnected');

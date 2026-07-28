@@ -10,14 +10,17 @@ type IndividualLinkWithCompany = Prisma.CompanyIndividualGetPayload<{
 export class IndividualRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Insert a new individual row
   async create(data: Prisma.IndividualCreateInput): Promise<Individual> {
     return this.prisma.individual.create({ data });
   }
 
+  // Fetch an individual by id (may include soft-deleted; caller filters)
   async findById(id: string): Promise<Individual | null> {
     return this.prisma.individual.findUnique({ where: { id } });
   }
 
+  // Fetch a filtered/sorted page of individuals plus a total count, in one snapshot
   async findManyWithCount(params: {
     where: Prisma.IndividualWhereInput;
     orderBy: Prisma.IndividualOrderByWithRelationInput;
@@ -31,6 +34,7 @@ export class IndividualRepository {
     ]);
   }
 
+  // Apply a partial update to an individual
   async update(
     id: string,
     data: Prisma.IndividualUpdateInput,
@@ -38,6 +42,7 @@ export class IndividualRepository {
     return this.prisma.individual.update({ where: { id }, data });
   }
 
+  // List this person's links with each company joined in (excludes deleted companies)
   async findCompaniesByIndividual(
     individualId: string,
   ): Promise<IndividualLinkWithCompany[]> {

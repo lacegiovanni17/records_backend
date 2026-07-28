@@ -30,6 +30,7 @@ export class IndividualsService {
     private readonly storageService: StorageService,
   ) {}
 
+  // Create an individual, uploading an optional photo, and audit the creation
   async create(
     dto: CreateIndividualDto,
     actor: AuthenticatedUser,
@@ -67,6 +68,7 @@ export class IndividualsService {
     return individual;
   }
 
+  // Update an individual (optional new photo) and audit the field-level diff
   async update(
     id: string,
     dto: UpdateIndividualDto,
@@ -104,6 +106,7 @@ export class IndividualsService {
     this.logger.log(`Individual updated → ${id} by ${actor.email}`);
     return after;
   }
+  // Move an individual onto the redlist (rejects if already flagged)
   async flag(
     id: string,
     dto: FlagIndividualDto,
@@ -130,6 +133,7 @@ export class IndividualsService {
     return updated;
   }
 
+  // Clear an individual's redlist flag (rejects if already clean)
   async unflag(
     id: string,
     dto: FlagIndividualDto,
@@ -156,6 +160,7 @@ export class IndividualsService {
     return updated;
   }
 
+  // Set an individual aside (reversible), stamping who archived it
   async archive(id: string, actor: AuthenticatedUser): Promise<Individual> {
     const individual = await this.findOne(id);
     if (individual.archivedAt) {
@@ -178,6 +183,7 @@ export class IndividualsService {
     return updated;
   }
 
+  // Bring an individual back from the archive
   async unarchive(id: string, actor: AuthenticatedUser): Promise<Individual> {
     const individual = await this.findOne(id);
     if (!individual.archivedAt) {
@@ -200,6 +206,7 @@ export class IndividualsService {
     return updated;
   }
 
+  // Soft-delete an individual (recoverable; the row is kept for compliance)
   async softDelete(
     id: string,
     actor: AuthenticatedUser,
@@ -222,6 +229,7 @@ export class IndividualsService {
     return { message: 'Individual deleted.' };
   }
 
+  // Undo a soft delete and bring the individual back to the live set
   async restore(id: string, actor: AuthenticatedUser): Promise<Individual> {
     // Bypass findOne — it 404s on deleted rows, and restore needs exactly those
     const individual = await this.individualRepository.findById(id);
@@ -246,6 +254,7 @@ export class IndividualsService {
     return updated;
   }
 
+  // List the companies this person is linked to, with role/ownership and bucketed counts
   async getIndividualCompanies(individualId: string) {
     // Confirm the person exists + is live
     await this.findOne(individualId); // 404 if missing/deleted
@@ -285,6 +294,7 @@ export class IndividualsService {
     return { data: companies, counts };
   }
 
+  // Fetch a live individual or throw 404 (soft-deleted rows count as not found)
   async findOne(id: string): Promise<Individual> {
     const individual = await this.individualRepository.findById(id);
     if (!individual || individual.deletedAt) {
@@ -293,6 +303,7 @@ export class IndividualsService {
     return individual;
   }
 
+  // Build the where/order from the query and return a page of individuals plus a total count
   async list(query: QueryIndividualsDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 25;
@@ -308,6 +319,7 @@ export class IndividualsService {
     return { data, count, page, limit, totalPages: Math.ceil(count / limit) };
   }
 
+  // Translate list filters (search, risk, status) into a Prisma where clause
   private buildWhere(query: QueryIndividualsDto): Prisma.IndividualWhereInput {
     const where: Prisma.IndividualWhereInput = {
       deletedAt: null,
@@ -329,6 +341,7 @@ export class IndividualsService {
     return where;
   }
 
+  // Map a risk level (low/medium/high) to its numeric score range
   private riskRange(level: RiskLevel): Prisma.IntFilter {
     switch (level) {
       case RiskLevel.LOW:
@@ -340,6 +353,7 @@ export class IndividualsService {
     }
   }
 
+  // Map a sort option to a Prisma orderBy (defaults to newest first)
   private buildOrderBy(
     sort?: IndividualSort,
   ): Prisma.IndividualOrderByWithRelationInput {
@@ -359,6 +373,7 @@ export class IndividualsService {
     }
   }
 
+  // Compute a before/after diff of changed fields for the audit metadata
   private buildDiff(
     before: Individual,
     after: Individual,

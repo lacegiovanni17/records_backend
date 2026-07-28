@@ -39,6 +39,7 @@ import { QueryEvidenceDto } from '../audit/dto/audit.dto';
 export class RedlistController {
   constructor(private readonly redlistService: RedlistService) {}
 
+  // Open a new redlist case and link its primary subject
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -55,6 +56,7 @@ export class RedlistController {
     );
   }
 
+  // Paginated, filtered, sorted redlist-case list
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -69,6 +71,7 @@ export class RedlistController {
     return AppResponse.success('Redlist cases retrieved', HttpStatus.OK, data);
   }
 
+  // Fetch a single case with its details for the case detail page
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -83,6 +86,7 @@ export class RedlistController {
     return AppResponse.success('Redlist case retrieved', HttpStatus.OK, data);
   }
 
+  // Update a case's details (non-status fields)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -96,6 +100,7 @@ export class RedlistController {
     return AppResponse.success('Redlist case updated', HttpStatus.OK, data);
   }
 
+  // Move a case along its lifecycle and append a timeline entry
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -113,6 +118,7 @@ export class RedlistController {
     );
   }
 
+  // Link a company or individual to this case with a role and risk contribution
   @Post(':id/entities')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -130,6 +136,7 @@ export class RedlistController {
     );
   }
 
+  // List the entities linked to a case for the Linked Entities tab
   @Get(':id/entities')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -144,6 +151,7 @@ export class RedlistController {
     return AppResponse.success('Case entities retrieved', HttpStatus.OK, data);
   }
 
+  // Unlink an entity from a case and recompute affected risk
   @Delete(':id/entities/:entityLinkId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -161,6 +169,7 @@ export class RedlistController {
     );
   }
 
+  // List the redlist cases where a company is the primary subject
   @Get('companies/:company_id/redlist-cases')
   async listCompanyCases(
     @Param('company_id') companyId: string,
@@ -178,6 +187,7 @@ export class RedlistController {
     );
   }
 
+  // List the redlist cases where an individual is the primary subject
   @Get('individuals/:individual_id/redlist-cases')
   async listIndividualCases(
     @Param('individual_id') individualId: string,
@@ -195,6 +205,7 @@ export class RedlistController {
     );
   }
 
+  // Add evidence to a case: either an uploaded document or an external source link
   @Post(':id/evidence')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -219,6 +230,7 @@ export class RedlistController {
     return AppResponse.success('Evidence added', HttpStatus.CREATED, data);
   }
 
+  // List a case's evidence for the Evidence Sources & Documents tab
   @Get(':id/evidence')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -236,6 +248,7 @@ export class RedlistController {
     return AppResponse.success('Evidence retrieved', HttpStatus.OK, data);
   }
 
+  // Generate a presigned URL to view a document-type evidence file (access audited)
   @Get(':id/evidence/:evidenceId/view')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -258,6 +271,7 @@ export class RedlistController {
     return AppResponse.success('Evidence URL generated', HttpStatus.OK, data);
   }
 
+  // Permanently remove a piece of evidence from a case (logged in the audit trail)
   @Delete(':id/evidence/:evidenceId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)

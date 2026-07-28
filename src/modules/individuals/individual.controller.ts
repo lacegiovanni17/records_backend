@@ -36,6 +36,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class IndividualsController {
   constructor(private readonly individualsService: IndividualsService) {}
 
+  // Create an individual (optional photo upload via multipart "file")
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -59,6 +60,7 @@ export class IndividualsController {
     return AppResponse.success('Individual created', HttpStatus.CREATED, data);
   }
 
+  // Update an individual's fields (optional new photo); diff captured in audit
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -83,6 +85,7 @@ export class IndividualsController {
     return AppResponse.success('Individual updated', HttpStatus.OK, data);
   }
 
+  // Fetch a single individual by id
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -97,6 +100,7 @@ export class IndividualsController {
     return AppResponse.success('Individual retrieved', HttpStatus.OK, data);
   }
 
+  // Paginated, filtered, sorted individual list
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -111,6 +115,7 @@ export class IndividualsController {
     return AppResponse.success('Individuals retrieved', HttpStatus.OK, data);
   }
 
+  // Flag an individual onto the redlist with a reason
   @Patch(':id/flag')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -124,6 +129,7 @@ export class IndividualsController {
     return AppResponse.success('Individual flagged', HttpStatus.OK, data);
   }
 
+  // Clear an individual's redlist flag
   @Patch(':id/unflag')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -137,6 +143,7 @@ export class IndividualsController {
     return AppResponse.success('Individual unflagged', HttpStatus.OK, data);
   }
 
+  // Archive an individual (reversible set-aside)
   @Patch(':id/archive')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -149,6 +156,7 @@ export class IndividualsController {
     return AppResponse.success('Individual archived', HttpStatus.OK, data);
   }
 
+  // Restore an individual from the archive
   @Patch(':id/unarchive')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -161,6 +169,7 @@ export class IndividualsController {
     return AppResponse.success('Individual unarchived', HttpStatus.OK, data);
   }
 
+  // Soft-delete an individual (recoverable; compliance-safe)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -173,6 +182,7 @@ export class IndividualsController {
     return AppResponse.success('Individual deleted', HttpStatus.OK, data);
   }
 
+  // Restore a soft-deleted individual
   @Patch(':id/restore')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -185,6 +195,7 @@ export class IndividualsController {
     return AppResponse.success('Individual restored', HttpStatus.OK, data);
   }
 
+  // List the companies this individual is linked to, with per-link role counts
   @Get(':id/companies')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(

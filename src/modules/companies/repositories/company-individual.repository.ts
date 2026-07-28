@@ -11,12 +11,14 @@ type CompanyIndividualWithPerson = Prisma.CompanyIndividualGetPayload<{
 export class CompanyIndividualRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Create a company-person link row
   async create(
     data: Prisma.CompanyIndividualUncheckedCreateInput,
   ): Promise<CompanyIndividual> {
     return this.prisma.companyIndividual.create({ data });
   }
 
+  // Fetch the single link between a company and a person, if it exists
   async findLink(
     companyId: string,
     individualId: string,
@@ -26,6 +28,7 @@ export class CompanyIndividualRepository {
     });
   }
 
+  // List a company's links with each person joined in (excludes deleted people)
   async findPeopleByCompany(
     companyId: string,
   ): Promise<CompanyIndividualWithPerson[]> {
@@ -41,6 +44,7 @@ export class CompanyIndividualRepository {
     });
   }
 
+  // Update a link's attributes by the (company, person) pair
   async updateLink(
     companyId: string,
     individualId: string,
@@ -52,6 +56,7 @@ export class CompanyIndividualRepository {
     });
   }
 
+  // Hard-delete a link row (history is preserved in the audit log)
   async deleteLink(companyId: string, individualId: string): Promise<void> {
     await this.prisma.companyIndividual.delete({
       where: { companyId_individualId: { companyId, individualId } },

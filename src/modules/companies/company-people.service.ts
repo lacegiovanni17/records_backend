@@ -29,6 +29,7 @@ export class CompanyPeopleService {
     private readonly auditService: AuditService,
   ) {}
 
+  // Link an individual to a company after validating both exist, no duplicate, and roles present
   async linkPerson(
     companyId: string,
     dto: LinkPersonDto,
@@ -93,6 +94,7 @@ export class CompanyPeopleService {
     return link;
   }
 
+  // Return the company's linked people, merging person identity with per-company link attributes
   async getCompanyPeople(companyId: string) {
     // Confirm the company exists + is live
     const company = await this.companyRepository.findById(companyId);
@@ -127,6 +129,7 @@ export class CompanyPeopleService {
     return { data: people, count: people.length };
   }
 
+  // Update a person-company link's attributes and audit the field-level diff
   async updateLink(
     companyId: string,
     individualId: string,
@@ -174,6 +177,7 @@ export class CompanyPeopleService {
     return after;
   }
 
+  // Remove a person-company link, snapshotting it to the audit log before deletion
   async removeLink(
     companyId: string,
     individualId: string,

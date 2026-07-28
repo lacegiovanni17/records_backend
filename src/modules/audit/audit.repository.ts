@@ -6,10 +6,12 @@ import { PrismaService } from '../../infrastructure/database/prisma.service';
 export class AuditRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Insert a single audit-log row
   async create(data: Prisma.AuditLogCreateInput): Promise<AuditLog> {
     return this.prisma.auditLog.create({ data });
   }
 
+  // Fetch logs for one target entity plus a total count, in one transaction
   async findByTarget(params: {
     targetType: string;
     targetId: string;
@@ -28,6 +30,7 @@ export class AuditRepository {
     ]);
   }
 
+  // Fetch a filtered page of logs plus a total count, in one transaction
   async findMany(params: {
     where: Prisma.AuditLogWhereInput;
     orderBy: Prisma.AuditLogOrderByWithRelationInput;

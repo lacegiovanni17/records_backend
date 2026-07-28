@@ -22,6 +22,7 @@ export class EmailService {
     });
   }
 
+  // Send an email via SMTP; awaits delivery and rethrows so callers can react to failures
   async dispatch(dto: MailDispatcherDto): Promise<void> {
     try {
       await this.transporter.sendMail({

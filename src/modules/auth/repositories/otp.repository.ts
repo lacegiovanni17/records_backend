@@ -6,6 +6,7 @@ import { PrismaService } from '../../../infrastructure/database/prisma.service';
 export class OtpRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Store a newly issued OTP for an email
   async create(data: {
     email: string;
     code: string;
@@ -14,6 +15,7 @@ export class OtpRepository {
     return this.prisma.otpCode.create({ data });
   }
 
+  // Mark a single OTP as used so it can't be replayed
   async markUsed(id: string): Promise<void> {
     await this.prisma.otpCode.update({
       where: { id },
@@ -21,6 +23,7 @@ export class OtpRepository {
     });
   }
 
+  // Burn any still-pending OTPs for an email before issuing a new one
   async invalidateAllPending(email: string): Promise<void> {
     await this.prisma.otpCode.updateMany({
       where: { email, usedAt: null },
@@ -36,6 +39,7 @@ export class OtpRepository {
     });
   }
 
+  // Count a wrong guess against an OTP's attempt limit
   async incrementAttempts(id: string): Promise<void> {
     await this.prisma.otpCode.update({
       where: { id },
