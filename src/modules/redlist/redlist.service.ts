@@ -41,6 +41,7 @@ export class RedlistService {
     private readonly storageService: StorageService,
   ) {}
 
+  // Open a case: validate optional primary subject, then atomically create case + timeline + link, and recompute flags
   async create(
     dto: CreateCaseDto,
     actor: AuthenticatedUser,
@@ -167,14 +168,17 @@ export class RedlistService {
     return full!;
   }
 
+  // List cases linked to a company (delegates to the shared entity-scoped query)
   async listCasesForCompany(companyId: string, query: QueryCasesDto) {
     return this.listForEntity({ companyId }, query);
   }
 
+  // List cases linked to an individual (delegates to the shared entity-scoped query)
   async listCasesForIndividual(individualId: string, query: QueryCasesDto) {
     return this.listForEntity({ individualId }, query);
   }
 
+  // Shared query: paginated, filtered cases scoped to a linked company or individual
   private async listForEntity(
     scope: { companyId?: string; individualId?: string },
     query: QueryCasesDto,
@@ -211,12 +215,14 @@ export class RedlistService {
     return { data, count, page, limit, totalPages: Math.ceil(count / limit) };
   }
 
+  // Fetch a live case or throw 404 (soft-deleted rows count as not found)
   async findCaseById(id: string): Promise<RedlistCase> {
     const c = await this.redlistRepository.findById(id);
     if (!c || c.deletedAt) throw new NotFoundException('Case not found.');
     return c;
   }
 
+  // Global case listing with search, category/severity/status filters, and pagination
   async list(query: QueryCasesDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 25;
@@ -242,6 +248,7 @@ export class RedlistService {
     return { data, count, page, limit, totalPages: Math.ceil(count / limit) };
   }
 
+  // Update a case's non-status fields and audit the field-level diff
   async update(
     id: string,
     dto: UpdateCaseDto,
@@ -273,6 +280,7 @@ export class RedlistService {
     return after;
   }
 
+  // Link an entity to a case (rejects duplicates) and recompute its flag, atomically
   async linkEntity(
     caseId: string,
     dto: LinkEntityDto,
@@ -340,6 +348,7 @@ export class RedlistService {
     return link;
   }
 
+  // Remove an entity link (snapshotting to audit) and recompute its flag, atomically
   async unlinkEntity(
     caseId: string,
     entityLinkId: string,
@@ -377,6 +386,7 @@ export class RedlistService {
     return { message: 'Entity unlinked from case.' };
   }
 
+  // Change a case's status, append a timeline entry, and re-sync all linked entities' flags
   async changeStatus(
     id: string,
     dto: ChangeCaseStatusDto,
@@ -415,6 +425,7 @@ export class RedlistService {
     return updated;
   }
 
+  // Return a case's linked entities shaped for the Linked Entities tab
   async listEntities(caseId: string) {
     await this.findCaseById(caseId);
     const links = await this.redlistRepository.findEntitiesByCase(caseId);
@@ -446,6 +457,7 @@ export class RedlistService {
     }));
   }
 
+  // Add evidence to a case: upload the file for DOCUMENT kind or store the URL for LINK kind
   async addEvidence(
     caseId: string,
     dto: AddEvidenceDto,
@@ -505,6 +517,7 @@ export class RedlistService {
     return evidence;
   }
 
+  // List a case's evidence, optionally filtered by source classification and confidence
   async listEvidence(
     caseId: string,
     filters: {
@@ -516,6 +529,7 @@ export class RedlistService {
     return this.redlistRepository.findEvidenceByCase(caseId, filters);
   }
 
+  // Presign a viewable URL for document-type evidence and audit the access
   async getEvidenceViewUrl(
     caseId: string,
     evidenceId: string,
@@ -551,6 +565,7 @@ export class RedlistService {
     return { url, expiresInSeconds: DOCUMENT_URL_EXPIRY_SECONDS };
   }
 
+  // Hard-delete evidence from a case, snapshotting it to the audit log first
   async removeEvidence(
     caseId: string,
     evidenceId: string,
@@ -670,6 +685,7 @@ export class RedlistService {
     };
   }
 
+  // Map a sort option to a Prisma orderBy (defaults to newest first)
   private buildOrderBy(
     sort?: RedlistSort,
   ): Prisma.RedlistCaseOrderByWithRelationInput {

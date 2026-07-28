@@ -33,6 +33,7 @@ import { AppResponse } from '../../shared/utils/app.response';
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
+  // Upload a KYC document (private tier) for a company
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -57,6 +58,7 @@ export class DocumentsController {
     return AppResponse.success('Document uploaded', HttpStatus.CREATED, data);
   }
 
+  // List a company's documents grouped by type, with missing docs derived
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -71,6 +73,7 @@ export class DocumentsController {
     return AppResponse.success('Documents retrieved', HttpStatus.OK, data);
   }
 
+  // Generate a short-lived presigned URL to view a private document (access is audited)
   @Get(':documentId/view')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -88,6 +91,7 @@ export class DocumentsController {
     return AppResponse.success('Document URL generated', HttpStatus.OK, data);
   }
 
+  // Mark a document as verified
   @Patch(':documentId/verify')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -100,6 +104,7 @@ export class DocumentsController {
     return AppResponse.success('Document verified', HttpStatus.OK, data);
   }
 
+  // Reject a document with a documented reason (KYC requires it)
   @Patch(':documentId/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -113,6 +118,7 @@ export class DocumentsController {
     return AppResponse.success('Document rejected', HttpStatus.OK, data);
   }
 
+  // Verification-score summary and per-status counts for the Documents panel
   @Get('summary')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -131,6 +137,7 @@ export class DocumentsController {
     );
   }
 
+  // Request a specific missing document from an assigned admin
   @Post('requests')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -148,6 +155,7 @@ export class DocumentsController {
     return AppResponse.success('Document requested', HttpStatus.CREATED, data);
   }
 
+  // List a company's outstanding document requests
   @Get('requests')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(

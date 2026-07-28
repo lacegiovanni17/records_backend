@@ -6,6 +6,7 @@ import { RedlistRepository } from './redlist.repository';
 export class RedlistDerivationService {
   constructor(private readonly redlistRepository: RedlistRepository) {}
 
+  // Recompute a company's redlistStatus from its active cases (FLAGGED if any remain)
   async syncCompany(
     companyId: string,
     tx: Prisma.TransactionClient,
@@ -20,6 +21,7 @@ export class RedlistDerivationService {
     });
   }
 
+  // Recompute an individual's redlistStatus from their active cases (FLAGGED if any remain)
   async syncIndividual(
     individualId: string,
     tx: Prisma.TransactionClient,

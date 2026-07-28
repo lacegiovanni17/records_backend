@@ -22,6 +22,7 @@ import { Throttle } from '@nestjs/throttler';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // Send a 6-digit login code to the admin's email
   @Post('request-otp')
   @Throttle({ default: { ttl: 60_000, limit: 3 } }) // max 3 OTP requests/min/IP
   @HttpCode(HttpStatus.OK)
@@ -30,6 +31,7 @@ export class AuthController {
     return AppResponse.success(data.message, HttpStatus.OK);
   }
 
+  // Verify the submitted code and return an access token on success
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() dto: VerifyOtpDto) {
@@ -37,6 +39,7 @@ export class AuthController {
     return AppResponse.success('OTP verified', HttpStatus.OK, data);
   }
 
+  // Return the currently authenticated admin from the token
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -44,6 +47,7 @@ export class AuthController {
     return AppResponse.success('Authenticated', HttpStatus.OK, user);
   }
 
+  // Sample OVERSEER-gated route used to test the roles guard
   @Get('overseer-only')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER)

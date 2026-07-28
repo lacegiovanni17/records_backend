@@ -14,6 +14,7 @@ import { AppResponse } from '../../shared/utils/app.response';
 export class CountriesController {
   constructor(private readonly countriesService: CountriesService) {}
 
+  // List all countries, optionally filtered/searched (name, iso, capital, region)
   @Get()
   @HttpCode(HttpStatus.OK)
   getCountries(@Query() query: QueryCountriesDto) {
@@ -21,6 +22,7 @@ export class CountriesController {
     return AppResponse.success('Countries retrieved', HttpStatus.OK, data);
   }
 
+  // List the distinct continents/regions
   // MUST come before @Get(':code') — otherwise "continents" matches :code
   @Get('continents')
   @HttpCode(HttpStatus.OK)
@@ -29,6 +31,7 @@ export class CountriesController {
     return AppResponse.success('Continents retrieved', HttpStatus.OK, data);
   }
 
+  // Fetch a single country by its ISO code
   @Get(':code')
   @HttpCode(HttpStatus.OK)
   getByCode(@Param('code') code: string) {

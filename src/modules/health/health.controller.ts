@@ -13,6 +13,7 @@ export class HealthController {
     private prisma: PrismaService,
   ) {}
 
+  // Liveness/readiness check that confirms the database is reachable
   @Get()
   @HealthCheck()
   check() {

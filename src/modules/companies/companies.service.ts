@@ -138,6 +138,7 @@ export class CompaniesService {
     return after;
   }
 
+  // Build the where/order from the query and return a page of companies plus a total count
   async list(query: QueryCompaniesDto): Promise<{
     data: Company[];
     count: number;
@@ -159,6 +160,7 @@ export class CompaniesService {
     return { data, count, page, limit, totalPages: Math.ceil(count / limit) };
   }
 
+  // Move a company onto the redlist (rejects if already flagged), audited with the reason
   async flag(
     id: string,
     dto: FlagCompanyDto,
@@ -185,6 +187,7 @@ export class CompaniesService {
     return updated;
   }
 
+  // Clear a company's redlist flag (rejects if already clean), audited with the reason
   async unflag(
     id: string,
     dto: FlagCompanyDto,
@@ -211,6 +214,7 @@ export class CompaniesService {
     return updated;
   }
 
+  // Set a company aside (reversible), stamping who archived it
   async archive(id: string, actor: AuthenticatedUser): Promise<Company> {
     const company = await this.findOne(id);
     if (company.archivedAt) {
@@ -233,6 +237,7 @@ export class CompaniesService {
     return updated;
   }
 
+  // Bring a company back from the archive
   async unarchive(id: string, actor: AuthenticatedUser): Promise<Company> {
     const company = await this.findOne(id);
     if (!company.archivedAt) {
@@ -255,6 +260,7 @@ export class CompaniesService {
     return updated;
   }
 
+  // Soft-delete a company (recoverable; the row is kept for compliance)
   async softDelete(
     id: string,
     actor: AuthenticatedUser,
@@ -277,6 +283,7 @@ export class CompaniesService {
     return { message: 'Company deleted.' };
   }
 
+  // Undo a soft delete and bring the company back to the live set
   async restore(id: string, actor: AuthenticatedUser): Promise<Company> {
     // Can't use findOne — it 404s on deleted rows. Fetch raw.
     const company = await this.companyRepository.findById(id);
@@ -300,11 +307,13 @@ export class CompaniesService {
     return updated;
   }
 
+  // Return the company's paginated audit trail for the Activity tab
   async getActivity(id: string, page?: number, limit?: number) {
     await this.findOne(id); // 404 if company missing/deleted
     return this.auditService.getEntityActivity('Company', id, page, limit);
   }
 
+  // Translate list filters (search, risk, status, industry, country) into a Prisma where clause
   private buildWhere(query: QueryCompaniesDto): Prisma.CompanyWhereInput {
     // Default view ALWAYS excludes archived + soft-deleted
     const where: Prisma.CompanyWhereInput = {
@@ -328,6 +337,7 @@ export class CompaniesService {
     return where;
   }
 
+  // Map a risk level (low/medium/high) to its numeric score range
   private riskRange(level: RiskLevel): Prisma.IntFilter {
     switch (level) {
       case RiskLevel.LOW:
@@ -339,6 +349,7 @@ export class CompaniesService {
     }
   }
 
+  // Map a sort option to a Prisma orderBy (defaults to newest first)
   private buildOrderBy(
     sort?: CompanySort,
   ): Prisma.CompanyOrderByWithRelationInput {
@@ -358,6 +369,7 @@ export class CompaniesService {
     }
   }
 
+  // Fetch a live company or throw 404 (soft-deleted rows count as not found)
   async findOne(id: string): Promise<Company> {
     const company = await this.companyRepository.findById(id);
     // Treat soft-deleted as non-existent — a deleted company is not "found"
@@ -367,6 +379,7 @@ export class CompaniesService {
     return company;
   }
 
+  // Compute a before/after diff of changed fields for the audit metadata
   private buildDiff(
     before: Company,
     after: Company,

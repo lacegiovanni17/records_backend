@@ -6,16 +6,19 @@ import { PrismaService } from '../../../infrastructure/database/prisma.service';
 export class CompanyRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Insert a new company row
   async create(data: Prisma.CompanyCreateInput): Promise<Company> {
     return this.prisma.company.create({ data });
   }
 
+  // Look up a company by its unique registration number (duplicate check)
   async findByRegistrationNumber(reg: string): Promise<Company | null> {
     return this.prisma.company.findUnique({
       where: { registrationNumber: reg },
     });
   }
 
+  // Fetch a filtered/sorted page of companies plus a total count, in one snapshot
   async findManyWithCount(params: {
     where: Prisma.CompanyWhereInput;
     orderBy: Prisma.CompanyOrderByWithRelationInput;

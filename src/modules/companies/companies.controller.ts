@@ -46,6 +46,7 @@ export class CompaniesController {
     private readonly companyStructureService: CompanyStructureService,
   ) {}
 
+  // Create a company (optional logo upload via multipart "file")
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -69,6 +70,7 @@ export class CompaniesController {
     return AppResponse.success('Company created', HttpStatus.CREATED, data);
   }
 
+  // Paginated, filtered, sorted company list
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -83,6 +85,7 @@ export class CompaniesController {
     return AppResponse.success('Companies retrieved', HttpStatus.OK, result);
   }
 
+  // Fetch a single company by id
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -97,6 +100,7 @@ export class CompaniesController {
     return AppResponse.success('Company retrieved', HttpStatus.OK, data);
   }
 
+  // Update company fields (diff is captured in the audit log)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -110,6 +114,7 @@ export class CompaniesController {
     return AppResponse.success('Company updated', HttpStatus.OK, data);
   }
 
+  // Flag a company onto the redlist with a reason
   @Patch(':id/flag')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -123,6 +128,7 @@ export class CompaniesController {
     return AppResponse.success('Company flagged', HttpStatus.OK, data);
   }
 
+  // Clear a company's redlist flag
   @Patch(':id/unflag')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -136,6 +142,7 @@ export class CompaniesController {
     return AppResponse.success('Company unflagged', HttpStatus.OK, data);
   }
 
+  // Archive a company (reversible set-aside)
   @Patch(':id/archive')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -148,6 +155,7 @@ export class CompaniesController {
     return AppResponse.success('Company archived', HttpStatus.OK, data);
   }
 
+  // Restore a company from the archive
   @Patch(':id/unarchive')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -160,6 +168,7 @@ export class CompaniesController {
     return AppResponse.success('Company unarchived', HttpStatus.OK, data);
   }
 
+  // Soft-delete a company (recoverable; compliance-safe)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -172,6 +181,7 @@ export class CompaniesController {
     return AppResponse.success('Company deleted', HttpStatus.OK, data);
   }
 
+  // Restore a soft-deleted company
   @Patch(':id/restore')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)
@@ -184,6 +194,7 @@ export class CompaniesController {
     return AppResponse.success('Company restored', HttpStatus.OK, data);
   }
 
+  // Company-scoped audit trail for the Activity tab
   @Get(':id/activity')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -206,6 +217,7 @@ export class CompaniesController {
     );
   }
 
+  // Link an existing individual to this company (roles, ownership, key-person)
   @Post(':id/people')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -223,6 +235,7 @@ export class CompaniesController {
     );
   }
 
+  // List the people linked to this company for the People panel
   @Get(':id/people')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(
@@ -237,6 +250,7 @@ export class CompaniesController {
     return AppResponse.success('Company people retrieved', HttpStatus.OK, data);
   }
 
+  // Update the attributes of a company-person link
   @Patch(':id/people/:individualId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER, AdminRole.EDITOR)
@@ -256,6 +270,7 @@ export class CompaniesController {
     return AppResponse.success('Link updated', HttpStatus.OK, data);
   }
 
+  // Unlink a person from this company (link removed, history kept in audit)
   @Delete(':id/people/:individualId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)

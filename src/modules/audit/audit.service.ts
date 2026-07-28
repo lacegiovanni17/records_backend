@@ -47,6 +47,7 @@ export class AuditService {
     }
   }
 
+  // Paginated activity trail for one entity (e.g. a company's audit tab)
   async getEntityActivity(
     targetType: string,
     targetId: string,
@@ -63,6 +64,7 @@ export class AuditService {
     return { data, count, page, limit, totalPages: Math.ceil(count / limit) };
   }
 
+  // Global audit-log listing with filters, sort, and pagination
   async list(query: QueryAuditDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 25;

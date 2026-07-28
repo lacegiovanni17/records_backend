@@ -33,6 +33,7 @@ export class DocumentsService {
     private readonly adminRepository: AdminRepository,
   ) {}
 
+  // Validate the company + doc name/type, store the file privately, persist, and audit
   async upload(
     companyId: string,
     dto: UploadDocumentDto,
@@ -106,6 +107,7 @@ export class DocumentsService {
     return doc.status;
   }
 
+  // Return a company's documents grouped by type, with missing docs derived from the catalog
   async listByCompany(companyId: string) {
     const company = await this.companyRepository.findById(companyId);
     if (!company || company.deletedAt) {
@@ -156,6 +158,7 @@ export class DocumentsService {
     };
   }
 
+  // Mint a time-limited presigned URL for a private document and audit the access
   async getViewUrl(
     documentId: string,
     actor: AuthenticatedUser,
@@ -197,6 +200,7 @@ export class DocumentsService {
     return doc;
   }
 
+  // Mark a document verified (in-house/ADMIN source), clearing any prior rejection
   async verify(id: string, actor: AuthenticatedUser): Promise<Document> {
     const doc = await this.getLiveDocument(id);
     if (doc.status === 'VERIFIED') {
@@ -224,6 +228,7 @@ export class DocumentsService {
     return updated;
   }
 
+  // Mark a document rejected with a documented reason/code, and audit it
   async reject(
     id: string,
     dto: RejectDocumentDto,
@@ -260,6 +265,7 @@ export class DocumentsService {
     return updated;
   }
 
+  // Compute the verification score and per-status counts against the full document catalog
   async getSummary(companyId: string) {
     const company = await this.companyRepository.findById(companyId);
     if (!company || company.deletedAt) {
@@ -317,6 +323,7 @@ export class DocumentsService {
     };
   }
 
+  // Create a request for a missing document, assigned to a validated admin, and audit it
   async requestDocument(
     companyId: string,
     dto: RequestDocumentDto,
@@ -369,6 +376,7 @@ export class DocumentsService {
     return request;
   }
 
+  // List a company's outstanding document requests
   async listRequests(companyId: string): Promise<DocumentRequest[]> {
     const company = await this.companyRepository.findById(companyId);
     if (!company || company.deletedAt) {

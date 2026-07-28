@@ -6,10 +6,12 @@ import { PrismaService } from '../../../infrastructure/database/prisma.service';
 export class AdminRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Look up an admin by their unique email
   async findByEmail(email: string): Promise<Admin | null> {
     return this.prisma.admin.findUnique({ where: { email } });
   }
 
+  // Look up an admin by id
   async findById(id: string): Promise<Admin | null> {
     return this.prisma.admin.findUnique({ where: { id } });
   }

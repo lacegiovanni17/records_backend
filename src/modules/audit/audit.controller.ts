@@ -18,6 +18,7 @@ import { AppResponse } from '../../shared/utils/app.response';
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
+  // List audit logs with filtering, sorting, and pagination
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.OVERSEER, AdminRole.APPROVER)

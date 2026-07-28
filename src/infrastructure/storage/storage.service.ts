@@ -46,6 +46,7 @@ export class StorageService {
     });
   }
 
+  // Upload a file to Spaces under the configured dir, public-read or private per options
   async upload(
     file: Express.Multer.File,
     options: { isPublic: boolean },
@@ -91,6 +92,7 @@ export class StorageService {
     );
   }
 
+  // Delete an object from Spaces (logs and swallows errors so callers aren't broken)
   async delete(key: string): Promise<void> {
     try {
       await this.client.send(
@@ -105,6 +107,7 @@ export class StorageService {
     }
   }
 
+  // Build the virtual-hosted public URL for a stored object key
   private buildPublicUrl(key: string): string {
     // v3 PutObject returns no Location, so build the virtual-hosted URL:
     // https://<bucket>.<region>.digitaloceanspaces.com/<key>
