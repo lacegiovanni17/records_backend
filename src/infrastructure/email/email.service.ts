@@ -11,10 +11,11 @@ export class EmailService {
   private readonly transporter: nodemailer.Transporter;
 
   constructor(private readonly configService: ConfigService) {
+    const port = parseInt(this.configService.get<string>('SMTP_PORT') ?? '465');
     this.transporter = nodemailer.createTransport({
       host: this.configService.getOrThrow<string>('SMTP_SERVER'),
-      port: parseInt(this.configService.get<string>('SMTP_PORT') ?? '465'),
-      secure: true,
+      port,
+      secure: port === 465, // 465 = implicit TLS; 587 = STARTTLS (secure:false)
       auth: {
         user: this.configService.getOrThrow<string>('EMAIL_USER'),
         pass: this.configService.getOrThrow<string>('EMAIL_PASSWORD'),
