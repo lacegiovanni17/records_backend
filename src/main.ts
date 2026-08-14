@@ -7,6 +7,10 @@ import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Allow the frontend (different origin) to call the API.
+  // Broad for now while testing; tighten `origin` to the real domain before production.
+  app.enableCors({ origin: true, credentials: true });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
